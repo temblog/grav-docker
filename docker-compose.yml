@@ -1,0 +1,19 @@
+version: '2'
+services:
+  app:
+    build:
+      context: .
+    volumes:
+      - .:/var/www/app
+    expose:
+      - "9000"
+  nginx:
+    image: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d/
+    volumes_from:
+      - app
+    depends_on:
+      - app
