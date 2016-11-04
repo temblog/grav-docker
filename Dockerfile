@@ -1,8 +1,10 @@
-FROM alpine:3.4
+FROM php:7-fpm-alpine
 
-RUN apk add --update php5-fpm php5-apcu php5-curl php5-gd php5-iconv php5-imagick \
-      php5-json php5-intl php5-mcrypt php5-mysql  php5-opcache php5-openssl php5-pdo \
-      php5-pdo_mysql php5-mysqli php5-xml php5-dom php5-phar php5-pcntl wget git
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+
+RUN apk upgrade -U && \
+    apk add --update --repository=http://dl-4.alpinelinux.org/alpine/edge/testing \
+    gd openssl php7-zip php7-mbstring php7-xml php7-opcache php7-apcu
 
 RUN rm -rf /var/cache/apk/* &rm -rf /tmp/*
 
