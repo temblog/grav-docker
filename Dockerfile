@@ -1,32 +1,40 @@
-FROM php:7-fpm-alpine
+# PHP7-FPM
+FROM php:7-fpm
 
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+# Install OS utilities
+RUN apt-get update
+RUN apt-get -y install \
+  curl \
+  iputils-ping \
+  net-tools \
+  git \
+  zip \
+  unzip \
+  wget \
+  vim
 
-RUN apk upgrade -U && \
-    apk add --update --repository=http://dl-4.alpinelinux.org/alpine/edge/testing \
-    gd openssl php7-zip php7-mbstring php7-xml php7-opcache php7-apcu
+# Install Composer
+ENV composer_tmp_dir /tmp/composer
+RUN mkdir ${composer_tmp_dir}
+RUN php -r "copy('https://getcomposer.org/installer', '${composer_tmp_dir}/composer-setup.php');"
+RUN php -r "if (hash_file('SHA384', '${composer_tmp_dir}/composer-setup.php') === 'e115a8dc7871f15d853148a7fbac7da27d6c0030b848d9b3dc09e2a0388afed865e6a3d6b3c0fad45c48e2b5fc1196ae') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+RUN php ${composer_tmp_dir}/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN php -r "unlink('${composer_tmp_dir}/composer-setup.php');"
+RUN composer --version
+RUN rmdir ${composer_tmp_dir}
 
-RUN rm -rf /var/cache/apk/* &rm -rf /tmp/*
+# Enable PHP core extensions
+RUN apt-get update && apt-get install -y \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libmcrypt-dev \
+    libpng12-dev \
+  && docker-php-ext-install -j$(nproc) iconv mcrypt \
+  && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+  && docker-php-ext-install -j$(nproc) gd
 
-WORKDIR /tmp
+#Install Grav using Composer
+composer create-project getgrav/grav ~/webroot/grav
 
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
-&& php composer-setup.php --install-dir=/usr/bin --filename=composer \
-&& php -r "unlink('composer-setup.php');" \
-&& composer require "getgrav/grav" --prefer-source --no-interaction \
-
-ENV HOME=/var/www/
-
-WORKDIR $HOME/app
-
-composer create-project getgrav/grav
-
-COPY . $HOME/app
-
-ADD php-fpm/php-fpm.conf /etc/php5/
-
-RUN composer  
-
-CMD ["php-fpm", "-F"]
-
-EXPOSE 9000
+# Required by Grav
+RUN docker-php-ext-install zip
