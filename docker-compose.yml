@@ -4,7 +4,7 @@ services:
     build:
       context: .
     volumes:
-      - ./app:/webapps/grav
+      - ./app:/var/www/app
     expose:
       - "9000"
   nginx:
@@ -13,7 +13,6 @@ services:
       - "8000:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d/
-      - ./app:/webapps/grav
     volumes_from:
       - app
     depends_on:

@@ -33,8 +33,10 @@ RUN apt-get update && apt-get install -y \
   && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
   && docker-php-ext-install -j$(nproc) gd
 
-#Install Grav using Composer
-composer create-project getgrav/grav ~/webroot/grav
-
 # Required by Grav
 RUN docker-php-ext-install zip
+
+ENV HOME=/var/www/
+
+#Install Grav using Composer
+RUN composer create-project getgrav/grav $HOME/app
